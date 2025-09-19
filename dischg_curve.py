@@ -41,5 +41,5 @@ df_merged.set_index('SOC', inplace=True)
 
 
 fig = px.line(df_merged, title='海辰280Ah放电和OCV_SOC曲线', color_discrete_sequence=['red', 'green', 'blue'], width=1500, height=600)
-fig.update_layout(xaxis_title='SOC（%）', yaxis_title='电压(V)', xaxis_dtick=10)
+fig.update_layout(xaxis_title='SOC（%）', yaxis_title='电压(V)', xaxis_dtick=5)
 st.plotly_chart(fig, use_container_width=True)

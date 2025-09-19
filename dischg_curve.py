@@ -35,11 +35,10 @@ soc_points = np.linspace(0, TOTAL_POINT, TOTAL_POINT + 1, dtype=int)
 soc_index = soc_points / TOTAL_POINT * 100
 
 df_merged = pd.read_csv('resampled_data.csv')
-df_merged.drop(columns=['Unnamed: 0'], inplace=True)
 df_merged['SOC'] = soc_index
 df_merged.set_index('SOC', inplace=True)
 
 
-fig = px.line(df_merged, title='海辰280Ah放电和OCV_SOC曲线', color_discrete_sequence=['red', 'green', 'blue'], width=1500, height=600)
+fig = px.line(df_merged, title='海辰280Ah放电和OCV_SOC曲线', color_discrete_sequence=['red', 'green', 'blue', 'purple'], width=1500, height=600)
 fig.update_layout(xaxis_title='SOC（%）', yaxis_title='电压(V)', xaxis_dtick=5)
 st.plotly_chart(fig, use_container_width=True)

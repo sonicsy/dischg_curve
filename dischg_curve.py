@@ -52,7 +52,7 @@ def get_soc_index():
 
 
 def show_fig(df_merged: pd.DataFrame, reversed: bool = False):
-    fig = px.line(df_merged, title='LFP储能电芯放电和OCV_SOC曲线', color_discrete_sequence=['red', 'green', 'blue', 'purple', 'orange'], width=1500, height=600)
+    fig = px.line(df_merged, title='EVE314Ah0.5P放电曲线', color_discrete_sequence=['red', 'green', 'blue', 'purple', 'orange'], width=1500, height=600)
     fig.update_layout(xaxis_title='SOC（%）', yaxis_title='电压(V)', xaxis_dtick=5)
     if reversed:
         fig.update_xaxes(autorange="reversed")

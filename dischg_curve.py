@@ -29,7 +29,7 @@ import plotly.express as px
 # df_merged = pd.concat([df1_resampled, df2_resampled, df3_resampled], axis=1)
 
 
-TOTAL_POINT = 3000
+TOTAL_POINT = 1000
 st.set_page_config(layout="wide")
 warnings.filterwarnings("ignore")
 
@@ -62,22 +62,30 @@ se_th_off_qf = pd.DataFrame()
 
 
 # -*- coding: utf-8 -*-
-"""
-数据加载模块
-"""
 import pandas as pd
 
 
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv('亿纬314Ah0.5P放电曲线1_full.csv')
-    df.rename(columns={'实际电压(V)': 'VTG', '能量(Wh)': 'Wh', '容量(Ah)': 'Ah',}, inplace=True)
-    df.sort_values(by='VTG', inplace=True)
+    global TOTAL_POINT
+    # 创建文件上传器
+    uploaded_file = st.file_uploader("上传数据文件", type=['csv'])
+
+    df = pd.DataFrame()
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        required_cols = {'电压(V)','容量(Ah)','能量(Wh)'}
+        if not required_cols.issubset(set(df.columns)):
+            st.error("上传的文件格式错误，请检查文件内容是否为电压(V)、容量(Ah)、能量(Wh)三列")
+            return pd.DataFrame()
+        TOTAL_POINT = df.shape[0] - 1
+        df.rename(columns={'电压(V)': 'VTG', '能量(Wh)': 'Wh', '容量(Ah)': 'Ah',}, inplace=True)
+        df.sort_values(by='VTG', inplace=True)
     return df
 
 def get_soc_index():
     soc_points = np.linspace(0, TOTAL_POINT, TOTAL_POINT + 1, dtype=int)
     soc_index = soc_points / TOTAL_POINT * 100
-    return soc_index, soc_points
+    return np.round(soc_index,2)
 
 def add_threshold(anno_lst, df_th):
     anno_lst.append({'x': df_th['SOC'], 'y': df_th['VTG'], 'text': f"{df_th['SOC']:.1f}%SOC {df_th['name']}"})
@@ -107,7 +115,7 @@ def add_scatter(fig, anno_lst: list):
         )
 
 def show_fig(df: pd.DataFrame, reversed: bool = False):
-    fig = px.line(df, x='SOC', y=['VTG'], title='EVE314Ah0.5P放电曲线', width=1500, height=600)
+    fig = px.line(df, x='SOC', y=['VTG'])
     if reversed:
         fig.update_xaxes(autorange="reversed")
     fig.update_yaxes(range=[2.5, 3.6])
@@ -159,10 +167,13 @@ def calc_th_time():
 
 def show_table(df: pd.DataFrame):
     global TH_LEVEL2, TH_FORCE_CHG, TH_LEVEL1, TH_OFF_QF, SYS_RESP_T, STANDBY_P, ESS_POWER, BATT_SERIES, SYS_LOSS
-    st.divider()
+    
+    # st.write('')
+    # st.write('')
     # 创建4列
+    
     col1, col2, col3, col4 = st.columns(4)
-
+    
     with col1:
         TH_LEVEL2 = float(st.text_input("放电截止电压（V）", placeholder="请输入放电截止电压", value="2.95", help="放电截止电压，即单体欠压二级报警值，默认2.9V"))
         
@@ -226,19 +237,28 @@ def show_table(df: pd.DataFrame):
 #         T1 = BATT_SERIES*(se_th_force_chg['能量(Wh)'] - se_th_level2['能量(Wh)']) / 1000 * 3600 / ESS_POWER
 
 # T2 = (BATT_SERIES*(se_th_level1['能量(Wh)'] - se_th_level2['能量(Wh)']) - ESS_POWER * 1000 * SYS_RESP_T/3600) / STANDBY_P * SYS_LOSS
-        result = f"停止放电到强充标志置位时间 T1: {T1:.0f}秒\n\n停止放电到断开主回路接触器时间 T2: {T2:.1f}小时"
+        result = f'''
+        若储能柜辅助电源为储能电池供电（直流取电），则：\n\n
+            停止放电到强充标志置位时间 T1: {T1:.0f}秒\n\n
+            停止放电到断开主回路接触器时间 T2: {T2:.1f}小时
+        '''
         st.success(result)
 
 
 
 if __name__ == "__main__":
-    soc_index, soc_points = get_soc_index()
     df = load_data()
-    # df_merged.drop(columns=["Unnamed: 0"], inplace=True)
-    df['SOC'] = soc_index
-    # df.set_index('SOC', inplace=True)
-    # df_merged = df_merged[['亿纬314Ah0.5P放电电压1', '亿纬314Ah0.5P放电电压2']]
-    show_table(df)
-    show_fig(df, reversed=True)
+    if not df.empty:
+        # df_merged.drop(columns=["Unnamed: 0"], inplace=True)
+        soc_index = get_soc_index()
+        df['SOC'] = soc_index
+        # df.set_index('SOC', inplace=True)
+        # df_merged = df_merged[['亿纬314Ah0.5P放电电压1', '亿纬314Ah0.5P放电电压2']]
+        # col1, col2 = st.columns([3, 5])
+        # with col1:
+        
+        show_table(df)
+        # with col2:
+        show_fig(df, reversed=True)
    
     

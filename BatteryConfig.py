@@ -11,6 +11,8 @@ class BatteryConfig:
         self.standby_power = 100              # 待机功耗(W)
         self.battery_series = 260             # 电池串数
         self.system_loss = 0.7                # 系统损耗
+        self.min_soc = 0,                     # 最小SOC(%)
+        self.max_soc = 100                    # 最大SOC(%)
     
     def load_config_file(self, config_file: str):
         pass

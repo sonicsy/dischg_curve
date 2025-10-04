@@ -3,14 +3,65 @@ import pandas as pd
 import streamlit as st
 from ThresholdResult import ThresholdResult
 
+
+
+
 class BatteryAnalyzer:
+    _df_soc_keyword_mapping = {
+        "soc": {"SOC", "soc"},
+    }
+
+    _df_col_keyword_mapping = {
+        "voltage": {"电压", "voltage"},
+        "energy": {"能量", "energy"},
+        # "capacity": ["容量", "capacity"],
+        # "soc": {"SOC", "soc"},
+        # "soh": {"SOH", "soh"},
+    }
     """电池数据分析器"""
     
     def __init__(self, config):
         self.config = config
-        self.total_points = 1000            # 默认值，读取csv文件后会根据行数进行调整
+        self.total_points = 0               # 读取csv文件后会根据文件的行数进行调整
         self.threshold_results = {}
+    
+    """
+        检查DataFrame列名是否包含指定的关键词
+        如果包含，则返回包含关键词的列名
+        如果不包含，则抛出 ValueError 异常
+    """
+    def _check_column_names_(self, df_columns: pd.Index) -> dict:
+        results = {}
+        for key, keywords in self._df_col_keyword_mapping.items():
+            matched_col = [col for col in df_columns if any(keyword in col for keyword in keywords)]
+            if len(matched_col) == 0:
+                raise ValueError(f"文件格式错误：未找到{key}对应列")
+            if len(matched_col) > 1:
+                raise ValueError(f"文件格式错误：{key}列名不唯一，匹配到列名：{matched_col}")
+            
+            # 因为返回的matched_col列表内容只有1个，所以取第一个转为字符串
+            results[key] = matched_col[0]
+
+        return results
+    
+    def _swap_column_names_(self, column_names: dict):
+        if column_names is None:
+            raise ValueError("column_names 不能为空")
+        return dict(zip(list(column_names.values()), list(column_names.keys())))
+    
+    def _add_soc_column_(self, df: pd.DataFrame) -> None:
+        """根据数据行数，添加SOC列, 并保留小数点后2位"""
+        matched_col = []
+        for key, keywords in self._df_soc_keyword_mapping.items():
+            matched_col = [col for col in df.columns if any(keyword in col for keyword in keywords)]
         
+        # 如果没找到SOC对应的列，则添加SOC列，如果找到SOC列，则将列名改为soc
+        if len(matched_col) == 0:
+            soc_index = np.linspace(self.config.min_soc, self.config.max_soc, self.total_points + 1)
+            df['soc'] = np.round(soc_index, 2)
+        elif len(matched_col) == 1:
+            df.rename(columns = {matched_col[0]: "soc"}, inplace=True)
+
     def load_battery_data(self, uploaded_file):
         """加载电池数据"""
         if uploaded_file is None:
@@ -18,25 +69,25 @@ class BatteryAnalyzer:
             
         try:
             df = pd.read_csv(uploaded_file)
-            required_cols = {'电压(V)', '容量(Ah)', '能量(Wh)'}
             
-            if not required_cols.issubset(set(df.columns)):
-                raise ValueError("文件格式错误：缺少必要的列")
-
-            df.rename(columns={
-                '电压(V)': 'voltage', 
-                '能量(Wh)': 'energy', 
-                '容量(Ah)': 'capacity'
-            }, inplace=True)
+            if df.isna().any().any():
+                raise ValueError("数据包含缺失值，请检查文件")
+            
             self.total_points = df.shape[0] - 1
-            if self.total_points < 1000:
-                raise ValueError("数据点不足1000，请上传正确文件")
+            if self.total_points < 100:
+                raise ValueError("数据点不足100，请上传正确文件")
             
-            # 容量或能量，是严格递增递减的，电压有采样误差，所以只能通过容量或能量进行排排序
+            column_names = self._check_column_names_(df.columns)
+
+            df.rename(columns=self._swap_column_names_(column_names), inplace=True)
+
+            # 放电过程中，能量或能量，是严格递减的，电压有采样误差，所以只能通过容量或能量进行排排序
             df.sort_values(by='energy', ascending=False, inplace=True)
-            # 添加SOC列, 并保留小数点后2位
-            soc_index = np.linspace(0, 100, self.total_points + 1)
-            df['SOC'] = np.round(soc_index, 2)
+            """
+            根据数据行数，添加SOC列, 并保留小数点后2位
+            SOC范围：0-100%
+            """
+            self._add_soc_column_(df)
 
             return df
             
@@ -68,7 +119,7 @@ class BatteryAnalyzer:
         # 电压从小到大排序，取比阈值小的最大的一个点（最接近阈值的点）
         point = below_threshold.iloc[-1]
         return ThresholdResult(
-            soc=point['SOC'],
+            soc=point['soc'],
             voltage=float(point['voltage']),
             energy=float(point['energy']),
             name=description,

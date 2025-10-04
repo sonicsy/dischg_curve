@@ -6,7 +6,7 @@ class BatteryVisualizer:
     @staticmethod
     def create_voltage_soc_plot(df, threshold_results, reversed_x=False):
         """创建电压-SOC曲线图"""
-        fig = px.line(df, x='SOC', y=['voltage'])
+        fig = px.line(df, x='soc', y=['voltage'])
         
         if reversed_x:
             fig.update_xaxes(autorange="reversed")

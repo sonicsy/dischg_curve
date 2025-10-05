@@ -1,17 +1,25 @@
 import plotly.express as px
 
 class BatteryVisualizer:
-    """电池数据可视化类"""
+    """电池数据可视化类 - 使用实例方法，支持配置和状态管理"""
     
-    @staticmethod
-    def create_voltage_soc_plot(df, threshold_results, reversed_x=False):
+    def __init__(self, default_reversed_x=True, default_y_range=(2.5, 3.6)):
+        """初始化可视化器"""
+        self.default_reversed_x = default_reversed_x
+        self.default_y_range = default_y_range
+        self._chart_count = 0  # 用于跟踪生成的图表数量
+    
+    def create_voltage_soc_plot(self, df, threshold_results, reversed_x=None):
         """创建电压-SOC曲线图"""
+        # 使用实例配置或参数覆盖
+        use_reversed_x = reversed_x if reversed_x is not None else self.default_reversed_x
+        
         fig = px.line(df, x='soc', y=['voltage'])
         
-        if reversed_x:
+        if use_reversed_x:
             fig.update_xaxes(autorange="reversed")
             
-        fig.update_yaxes(range=[2.5, 3.6])
+        fig.update_yaxes(range=self.default_y_range)
         fig.update_layout(
             xaxis_title='SOC（%）', 
             yaxis_title='电压(V)', 
@@ -20,12 +28,12 @@ class BatteryVisualizer:
         )
         
         # 添加阈值标注
-        BatteryVisualizer._add_threshold_annotations(fig, threshold_results)
+        self._add_threshold_annotations(fig, threshold_results)
         
+        self._chart_count += 1
         return fig
     
-    @staticmethod
-    def _add_threshold_annotations(fig, threshold_results):
+    def _add_threshold_annotations(self, fig, threshold_results):
         """添加阈值标注到图表"""
         annotations = []
         scatter_points = []
@@ -66,3 +74,18 @@ class BatteryVisualizer:
                 marker=dict(size=6, color='blue'),
                 name=point['name']
             )
+    
+    def create_multiple_plots(self, df, threshold_results):
+        """创建多个图表（预留扩展功能）"""
+        # 可以扩展为创建多个相关图表
+        return {
+            'voltage_soc': self.create_voltage_soc_plot(df, threshold_results)
+        }
+    
+    def get_chart_count(self):
+        """获取已生成的图表数量"""
+        return self._chart_count
+    
+    def reset_chart_count(self):
+        """重置图表计数器"""
+        self._chart_count = 0

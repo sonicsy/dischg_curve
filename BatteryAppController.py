@@ -16,35 +16,29 @@ class BatteryAppController:
         if file_content is None:
             return False, "未提供文件内容"
             
-        try:
-            self.current_df = self.analyzer.load_battery_data(file_content)
-            if self.current_df is not None:
-                return True, "数据加载成功"
-            else:
-                return False, "数据加载失败"
-        except Exception as e:
-            return False, f"数据加载失败: {str(e)}"
+        self.current_df = self.analyzer.load_battery_data(file_content)
+        if self.current_df is not None:
+            return True, "数据加载成功"
+        else:
+            return False, self.analyzer.get_error_message()
+
     
     def perform_calculation(self):
         """执行计算 - 纯业务逻辑"""
         if self.current_df is None:
             return False, "请先加载数据"
             
-        try:
-            # 计算阈值点
-            self.analyzer.calculate_threshold_points(self.current_df)
-            
-            # 计算时间
-            t1, t2 = self.analyzer.calculate_times()
-            
-            self.calculation_complete = True
-            return True, {
-                't1': t1,
-                't2': t2
-            }
-            
-        except Exception as e:
-            return False, f"计算失败: {str(e)}"
+        # 计算阈值点
+        self.analyzer.calculate_threshold_points(self.current_df)
+        
+        # 计算时间
+        t1, t2 = self.analyzer.calculate_times()
+        
+        self.calculation_complete = True
+        return True, {
+            't1': t1,
+            't2': t2
+        }
     
     def get_data_preview(self, max_rows=10):
         """获取数据预览信息"""

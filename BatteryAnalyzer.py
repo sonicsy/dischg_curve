@@ -63,14 +63,14 @@ class BatteryAnalyzer:
             
         try:
             df = pd.read_csv(uploaded_file)
-            
-            if df.isna().any().any():
-                self.error_message = "数据包含缺失值，请检查文件"
-                raise ValueError(self.error_message)
-            
+
             self.total_points = df.shape[0] - 1
             if self.total_points < 100:
                 self.error_message = "数据点不足100，请上传正确文件"
+                raise ValueError(self.error_message)
+            
+            if df.isna().any().any():
+                self.error_message = "数据包含缺失值，请检查文件"
                 raise ValueError(self.error_message)
             
             column_names = self._check_column_names(df.columns)

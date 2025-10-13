@@ -32,12 +32,15 @@ class BatteryAppUI:
                 self._render_calculation_section(controller)
             else:
                 st.error(message)
+        st.write('---')
+        st.markdown("<div style='text-align: right;color: gray;'>杭州协能科技股份有限公司-V1.0.0</div>", unsafe_allow_html=True)
+        
     
     def _file_upload(self):
         """渲染文件上传组件"""
-        st.header("数据文件上传")
+        st.header("放电数据文件上传")
         return st.file_uploader(
-            "上传电池放电数据文件", 
+            "上传包含放电电压和放电能量的电池放电数据文件（CSV格式）", 
             type=['csv'],
             help="请上传包含电压、能量两列数据的CSV文件"
         )
@@ -191,7 +194,7 @@ class BatteryAppUI:
         if df is not None and threshold_results:
             batteryVisualizer = BatteryVisualizer()
             fig = batteryVisualizer.create_voltage_soc_plot(df, threshold_results, reversed_x=True)
-            st.header("放电曲线图")
+            st.header("电池放电曲线图")
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("无法生成图表：缺少必要的数据或阈值结果")

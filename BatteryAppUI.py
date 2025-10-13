@@ -131,7 +131,7 @@ class BatteryAppUI:
                 min_value=0.0, 
                 max_value=1.0, 
                 value=config.system_loss,
-                help="ESS系统的效率损耗，如DCDC损耗"
+                help="ESS系统的损耗，如电池健康度下降，DCDC损耗"
             )
         
         # 更新配置
@@ -161,15 +161,17 @@ class BatteryAppUI:
         """渲染计算结果"""
         t1 = result['t1']
         t2 = result['t2']
+        t3 = result['t3']
         threshold_results = controller.get_threshold_results()
         
         st.success(f"""
         **计算结果：**
         
-        - 停止放电到强充标志置位时间 T1: **{t1:.0f}秒**
-        - 停止放电到断开主回路接触器时间 T2: **{t2:.1f}小时**
+        - 满功率运行停止放电到强充标志置位时间 T1: **{t1:.0f}秒**
+        - 待机运行停止放电到强充标志置位时间 T2: **{t2:.1f}小时**
+        - 停止放电到断开主回路接触器时间 T3: **{t3:.1f}小时**
         
-        *若储能柜辅助电源为储能电池供电（直流取电）*
+        *T2、T3参数为储能柜辅助电源为储能电池供电（直流取电）*
         """)
         
         # 显示阈值点详情

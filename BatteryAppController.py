@@ -32,12 +32,13 @@ class BatteryAppController:
         self.analyzer.calculate_threshold_points(self.current_df)
         
         # 计算时间
-        t1, t2 = self.analyzer.calculate_times()
+        t1, t2, t3 = self.analyzer.calculate_times()
         
         self.calculation_complete = True
         return True, {
             't1': t1,
-            't2': t2
+            't2': t2,
+            't3': t3
         }
     
     def get_data_preview(self, max_rows=10):

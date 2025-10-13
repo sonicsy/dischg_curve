@@ -129,16 +129,29 @@ class BatteryAnalyzer:
         level1_alarm = self.threshold_results["断开直流主回路"]
         
         # 停止放电到强充标志置位时间 T1 (秒)
-        t1 = (self.config.battery_series * (force_charge.energy - stop_discharge.energy) / 
-              1000 * 3600 / self.config.ess_power)
+        energy_diff = self.config.battery_series * (force_charge.energy - stop_discharge.energy)
+
+        t1 = energy_diff / 1000 * 3600 /self.config.ess_power * self.config.system_loss
         
+        # 停止放电到强充标志置位时间 T2（小时）
+        energy_diff = (self.config.battery_series * 
+                      (force_charge.energy - stop_discharge.energy) - 
+                      self.config.ess_power * 1000 * self.config.system_response_time / 3600)
+
+
+        t2 = energy_diff / self.config.standby_power * self.config.system_loss
+
         # 停止放电到断开主回路接触器时间 T2 (小时)
         energy_diff = (self.config.battery_series * 
                       (level1_alarm.energy - stop_discharge.energy) - 
                       self.config.ess_power * 1000 * self.config.system_response_time / 3600)
-        t2 = energy_diff / self.config.standby_power * self.config.system_loss
         
-        return t1, t2
+        
+        t3 = energy_diff / self.config.standby_power * self.config.system_loss
+
+        
+
+        return t1, t2, t3
     
     def get_error_message(self):
         """获取错误信息"""
